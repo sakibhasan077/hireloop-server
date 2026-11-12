@@ -50,6 +50,21 @@ app.post("/jobs",async(req,res)=>{
   res.send(result);
 })
 
+// update 
+app.patch("/jobs/:id",async(req,res)=>{
+  const {id} = req.params;
+  // Strip _id: MongoDB can't $set an immutable field, which caused a 500.
+  const {_id, ...data} = req.body;
+  const result = await jobsCollection.updateOne(
+    {_id: new ObjectId(id)},
+    {
+      $set: data
+    }
+
+  );
+  res.send(result)
+})
+
 //delete
 app.delete("/jobs/:id",async(req,res)=>{
   const {id} = req.params;
