@@ -37,6 +37,12 @@ app.get("/jobs",async(req,res)=>{
   const result = await jobsCollection.find({}).toArray()
   res.send(result);
 })
+// get specific job data 
+app.get("/jobs/:id",async(req,res)=>{
+  const {id} = req.params
+  const result = await jobsCollection.findOne({_id: new ObjectId(id)});
+  res.send(result)
+})
 // post
 app.post("/jobs",async(req,res)=>{
   const job = req.body;
