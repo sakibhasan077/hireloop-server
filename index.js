@@ -31,6 +31,12 @@ app.get("/", (req, res) => {
   res.send({ message: "Hire Loop API is running", status: "success" });
 });
 
+// job related apis
+app.post("/jobs",async(req,res)=>{
+  const job = req.body;
+  const result = await jobsCollection.insertOne(job)
+  res.send(result);
+})
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
