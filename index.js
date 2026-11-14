@@ -26,6 +26,7 @@ export async function connectToMongoDB() {
 const connected = await connectToMongoDB();
 const db = connected.db("hire-loop")
 const jobsCollection = db.collection("jobs");
+const applicationsCollection = db.collection("applications");
 
 app.get("/", (req, res) => {
   res.send({ message: "Hire Loop API is running", status: "success" });
@@ -89,6 +90,13 @@ app.patch("/jobs/:id",async(req,res)=>{
 app.delete("/jobs/:id",async(req,res)=>{
   const {id} = req.params;
   const result = await jobsCollection.deleteOne({_id: new ObjectId(id)});
+  res.send(result)
+})
+
+// Application Related API
+app.post("/applications", async (req,res)=>{
+  const application = req.body;
+  const result = await applicationsCollection.insertOne(application);
   res.send(result)
 })
 
