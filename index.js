@@ -36,7 +36,6 @@ app.get("/", (req, res) => {
 //Add
 app.get("/jobs",async(req,res)=>{
   const searchQuery = {}
-  console.log(req.query);
   if(req.query){
     if(req.query.jobType){
       searchQuery.jobType = req.query.jobType
@@ -94,6 +93,12 @@ app.delete("/jobs/:id",async(req,res)=>{
 })
 
 // Application Related API
+//get 
+app.get("/applications", async (req,res)=>{
+  const result = await applicationsCollection.find({}).toArray();
+  res.send(result)
+})
+// post 
 app.post("/applications", async (req,res)=>{
   const application = req.body;
   const result = await applicationsCollection.insertOne(application);
