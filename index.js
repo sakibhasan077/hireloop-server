@@ -24,7 +24,7 @@ export async function connectToMongoDB() {
 }
 
 const connected = await connectToMongoDB();
-const db = connected.db("hire-loop")
+const db = connected.db("hire-loop");
 const jobsCollection = db.collection("jobs");
 const applicationsCollection = db.collection("applications");
 
@@ -34,76 +34,80 @@ app.get("/", (req, res) => {
 
 // job related apis
 //Add
-app.get("/jobs",async(req,res)=>{
-  const searchQuery = {}
-  if(req.query){
-    if(req.query.jobType){
-      searchQuery.jobType = req.query.jobType
+app.get("/jobs", async (req, res) => {
+  const searchQuery = {};
+  if (req.query) {
+    if (req.query.jobType) {
+      searchQuery.jobType = req.query.jobType;
     }
-    if(req.query.remote){
-      searchQuery.remote = req.query.remote === "true" ? true : false
+    if (req.query.remote) {
+      searchQuery.remote = req.query.remote === "true" ? true : false;
     }
-    if(req.query.jobCategory){
-      searchQuery.jobCategory = req.query.jobCategory 
+    if (req.query.jobCategory) {
+      searchQuery.jobCategory = req.query.jobCategory;
     }
-    if(req.query.search){
+    if (req.query.search) {
       searchQuery.$or = [
         { jobTitle: { $regex: req.query.search, $options: "i" } },
         { responsibilities: { $regex: req.query.search, $options: "i" } },
-        { qualifications: { $regex: req.query.search, $options: "i" } }
-      ]
+        { qualifications: { $regex: req.query.search, $options: "i" } },
+      ];
     }
   }
-  const result = await jobsCollection.find(searchQuery).toArray()
+  const result = await jobsCollection.find(searchQuery).toArray();
   res.send(result);
-})
-// get specific job data 
-app.get("/jobs/:id",async(req,res)=>{
-  const {id} = req.params
-  const result = await jobsCollection.findOne({_id: new ObjectId(id)});
-  res.send(result)
-})
+});
+// get specific job data
+app.get("/jobs/:id", async (req, res) => {
+  const { id } = req.params;
+  const result = await jobsCollection.findOne({ _id: new ObjectId(id) });
+  res.send(result);
+});
 // post
-app.post("/jobs",async(req,res)=>{
+app.post("/jobs", async (req, res) => {
   const job = req.body;
-  const result = await jobsCollection.insertOne(job)
+  const result = await jobsCollection.insertOne(job);
   res.send(result);
-})
+});
 
-// update 
-app.patch("/jobs/:id",async(req,res)=>{
-  const {id} = req.params;
+// update
+app.patch("/jobs/:id", async (req, res) => {
+  const { id } = req.params;
   // Strip _id: MongoDB can't $set an immutable field, which caused a 500.
-  const {_id, ...data} = req.body;
+  const { _id, ...data } = req.body;
   const result = await jobsCollection.updateOne(
-    {_id: new ObjectId(id)},
+    { _id: new ObjectId(id) },
     {
-      $set: data
-    }
-
+      $set: data,
+    },
   );
-  res.send(result)
-})
+  res.send(result);
+});
 
 //delete
-app.delete("/jobs/:id",async(req,res)=>{
-  const {id} = req.params;
-  const result = await jobsCollection.deleteOne({_id: new ObjectId(id)});
-  res.send(result)
-})
+app.delete("/jobs/:id", async (req, res) => {
+  const { id } = req.params;
+  const result = await jobsCollection.deleteOne({ _id: new ObjectId(id) });
+  res.send(result);
+});
 
 // Application Related API
-//get 
-app.get("/applications", async (req,res)=>{
-  const result = await applicationsCollection.find({}).toArray();
-  res.send(result)
-})
-// post 
-app.post("/applications", async (req,res)=>{
+//get
+app.get("/applications", async (req, res) => {
+  const query = {};
+  const { userId } = req.query;
+  if(userId){
+    query.userId = userId
+  }
+  const result = await applicationsCollection.find(query).toArray();
+  res.send(result);
+});
+// post
+app.post("/applications", async (req, res) => {
   const application = req.body;
   const result = await applicationsCollection.insertOne(application);
-  res.send(result)
-})
+  res.send(result);
+});
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
