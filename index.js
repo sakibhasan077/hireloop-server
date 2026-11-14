@@ -34,7 +34,27 @@ app.get("/", (req, res) => {
 // job related apis
 //Add
 app.get("/jobs",async(req,res)=>{
-  const result = await jobsCollection.find({}).toArray()
+  const searchQuery = {}
+  console.log(req.query);
+  if(req.query){
+    if(req.query.jobType){
+      searchQuery.jobType = req.query.jobType
+    }
+    if(req.query.remote){
+      searchQuery.remote = req.query.remote === "true" ? true : false
+    }
+    if(req.query.jobCategory){
+      searchQuery.jobCategory = req.query.jobCategory 
+    }
+    if(req.query.search){
+      searchQuery.$or = [
+        { jobTitle: { $regex: req.query.search, $options: "i" } },
+        { responsibilities: { $regex: req.query.search, $options: "i" } },
+        { qualifications: { $regex: req.query.search, $options: "i" } }
+      ]
+    }
+  }
+  const result = await jobsCollection.find(searchQuery).toArray()
   res.send(result);
 })
 // get specific job data 
