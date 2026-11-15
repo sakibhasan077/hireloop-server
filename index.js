@@ -38,6 +38,13 @@ app.get("/", (req, res) => {
   res.send({ message: "Hire Loop API is running", status: "success" });
 });
 
+// user related apis
+app.get("/users/:id", async (req, res) =>{
+  const {id} = req.params;
+  const result = await userCollection.findOne({_id: new ObjectId(id)}, {projection:{premium:1}});
+  res.send(result)
+})
+
 // job related apis
 //Add
 app.get("/jobs", async (req, res) => {
