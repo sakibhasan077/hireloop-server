@@ -59,6 +59,9 @@ app.get("/jobs", async (req, res) => {
     if (req.query.jobCategory) {
       searchQuery.jobCategory = req.query.jobCategory;
     }
+    if(req.query.recruiterId){
+      searchQuery.recruiterId = req.query.recruiterId;
+    }
     if (req.query.search) {
       searchQuery.$or = [
         { jobTitle: { $regex: req.query.search, $options: "i" } },
@@ -108,9 +111,12 @@ app.delete("/jobs/:id", async (req, res) => {
 //get
 app.get("/applications", async (req, res) => {
   const query = {};
-  const { userId } = req.query;
+  const { userId,jobId } = req.query;
   if (userId) {
     query.userId = userId;
+  }
+  if(jobId){
+    query.jobId = jobId;
   }
   const result = await applicationsCollection.find(query).toArray();
   res.send(result);
@@ -131,6 +137,20 @@ app.post("/applications", async (req, res) => {
   const result = await applicationsCollection.insertOne(application);
   res.send(result);
 });
+
+// update 
+app.patch("/applications/:id",async(req,res)=>{
+  const {id} = req.params;
+  const result = await applicationsCollection.updateOne(
+    {_id: new ObjectId(id)},
+    {
+      $set:{
+        status: req.body.status
+      }
+    }
+  )
+  res.send(result);
+})
 
 // Payment related api
 app.post("/payment/checkout-verify", async (req, res) => {
