@@ -102,6 +102,16 @@ app.get("/applications", async (req, res) => {
   const result = await applicationsCollection.find(query).toArray();
   res.send(result);
 });
+// Count 
+app.get("/applications/count", async (req, res) => {
+  const query = {};
+  const { userId } = req.query;
+  if(userId){
+    query.userId = userId
+  }
+  const result = await applicationsCollection.countDocuments(query)
+  res.send({count: result});
+});
 // post
 app.post("/applications", async (req, res) => {
   const application = req.body;
