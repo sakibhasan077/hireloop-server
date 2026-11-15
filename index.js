@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import "dotenv/config";
 import { MongoClient, ObjectId } from "mongodb";
+import Stripe from "stripe";
 
 const app = express();
 const port = process.env.port || 5000;
@@ -9,6 +10,9 @@ const port = process.env.port || 5000;
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Stripe setup
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 // Mongodb setup
 const client = new MongoClient(process.env.MONGODB_URI);
@@ -27,6 +31,8 @@ const connected = await connectToMongoDB();
 const db = connected.db("hire-loop");
 const jobsCollection = db.collection("jobs");
 const applicationsCollection = db.collection("applications");
+const paymentCollection = db.collection("payment");
+const userCollection = db.collection("user")
 
 app.get("/", (req, res) => {
   res.send({ message: "Hire Loop API is running", status: "success" });
@@ -96,27 +102,63 @@ app.delete("/jobs/:id", async (req, res) => {
 app.get("/applications", async (req, res) => {
   const query = {};
   const { userId } = req.query;
-  if(userId){
-    query.userId = userId
+  if (userId) {
+    query.userId = userId;
   }
   const result = await applicationsCollection.find(query).toArray();
   res.send(result);
 });
-// Count 
+// Count
 app.get("/applications/count", async (req, res) => {
   const query = {};
   const { userId } = req.query;
-  if(userId){
-    query.userId = userId
+  if (userId) {
+    query.userId = userId;
   }
-  const result = await applicationsCollection.countDocuments(query)
-  res.send({count: result});
+  const result = await applicationsCollection.countDocuments(query);
+  res.send({ count: result });
 });
 // post
 app.post("/applications", async (req, res) => {
   const application = req.body;
   const result = await applicationsCollection.insertOne(application);
   res.send(result);
+});
+
+// Payment related api
+app.post("/payment/checkout-verify", async (req, res) => {
+  const { sessionId } = req.body;
+  if(!sessionId){
+    return res.send({success: false, message: "Session ID is required"});
+  }
+  const { status, customer_email, metadata, payment_intent, payment_status } =
+    await stripe.checkout.sessions.retrieve(sessionId);
+  if(status === "complete" && payment_status === "paid"){
+    const existingPament = await paymentCollection.findOne({sessionId});
+    if(existingPament){
+      return res.send({success: false, message: "Payment already exists"});
+    }
+    const payments = {
+      status,
+      customer_email,
+      payment_intent,
+      payment_status,
+      sessionId,
+      payment_Date: new Date(),
+      userId: metadata.userId,
+    };
+    const result = await paymentCollection.insertOne(payments)
+    const updatedUser = await userCollection.updateOne(
+      {_id: new ObjectId(metadata.userId)},
+      {
+        $set:{
+          premium: true
+        }
+      }
+    )
+    res.send({success: true, result, updatedUser})
+  }
+  res.send({success: false, message: "Payment not completed"});
 });
 
 app.listen(port, () => {
