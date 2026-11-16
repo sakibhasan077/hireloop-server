@@ -45,6 +45,19 @@ app.get("/users/:id", async (req, res) =>{
   res.send(result)
 })
 
+app.patch("/users/:id/role",async (req,res)=>{
+  const {id} = req.params;
+  const result = await userCollection.updateOne(
+    {_id: new ObjectId(id)},
+    {
+      $set: {
+        role: req.body.role
+      }
+    }
+  )
+  res.send(result);
+})
+
 // job related apis
 //Add
 app.get("/jobs", async (req, res) => {
