@@ -83,6 +83,13 @@ const verifyRecruiter = async (req,res,next) =>{
   }
   next()
 }
+const verifyAdmin = async (req,res,next) =>{
+  if(req.user.role !== "admin"){
+    res.status(403).send({message:"Forbidden access"})
+    return;
+  }
+  next()
+}
 
 // user related apis
 app.get("/users/:id", async (req, res) =>{
@@ -91,7 +98,7 @@ app.get("/users/:id", async (req, res) =>{
   res.send(result)
 })
 
-app.patch("/users/:id/role",async (req,res)=>{
+app.patch("/users/:id/role",verifyToken,verifyAdmin,async (req,res)=>{
   const {id} = req.params;
   const result = await userCollection.updateOne(
     {_id: new ObjectId(id)},
