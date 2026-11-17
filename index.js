@@ -33,10 +33,41 @@ const jobsCollection = db.collection("jobs");
 const applicationsCollection = db.collection("applications");
 const paymentCollection = db.collection("payment");
 const userCollection = db.collection("user")
+const sessions = db.collection("session")
 
 app.get("/", (req, res) => {
   res.send({ message: "Hire Loop API is running", status: "success" });
 });
+
+// verify Token 
+const verifyToken = async (req,res,next) =>{
+  const authHeader = req.headers.authorization;
+  if(!authHeader) {
+    res.status(401).send({message: "Unauthorized access"});
+    return;
+  }
+  const token = authHeader.split(" ")[1]
+  if(!token) {
+    res.status(401).send({message: "Unauthorized access"});
+    return;
+  }
+  const session = await sessions.findOne({token});
+  if(!session) {
+    res.status(401).send({message: "Unauthorized access"});
+    return;
+  }
+  
+  const user = await userCollection.findOne({_id: new ObjectId(session.userId)})
+  if(!user) {
+    res.status(401).send({message: "Unauthorized access"});
+    return;
+  }
+
+  req.user = user;
+  next()
+  
+
+}
 
 // user related apis
 app.get("/users/:id", async (req, res) =>{
@@ -122,13 +153,18 @@ app.delete("/jobs/:id", async (req, res) => {
 
 // Application Related API
 //get
-app.get("/applications", async (req, res) => {
+app.get("/applications", verifyToken , async (req, res) => {
   const query = {};
   const { userId,jobId } = req.query;
   if (userId) {
     query.userId = userId;
   }
   if(jobId){
+    const job = await jobsCollection.findOne({_id: new ObjectId(jobId)});
+    if(job.recruiterId !== req.user._id.toString() && req.user.role !== "admin"){
+      res.status(403).send({message: "Forbidden access"});
+      return;
+    }
     query.jobId = jobId;
   }
   const result = await applicationsCollection.find(query).toArray();
