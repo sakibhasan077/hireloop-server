@@ -66,7 +66,22 @@ const verifyToken = async (req,res,next) =>{
   req.user = user;
   next()
   
+}
 
+const verifySeeker = async (req,res,next) =>{
+  if(req.user.role !== "seeker"){
+    res.status(403).send({message: "Forbidden access"});
+    return;
+  }
+  next()
+}
+
+const verifyRecruiter = async (req,res,next) =>{
+  if(req.user.role !== "recruiter"){
+    res.status(403).send({message:"Forbidden access"})
+    return;
+  }
+  next()
 }
 
 // user related apis
@@ -124,7 +139,7 @@ app.get("/jobs/:id", async (req, res) => {
   res.send(result);
 });
 // post
-app.post("/jobs", async (req, res) => {
+app.post("/jobs", verifyToken, verifyRecruiter, async (req, res) => {
   const job = req.body;
   const result = await jobsCollection.insertOne(job);
   res.send(result);
@@ -181,7 +196,7 @@ app.get("/applications/count", async (req, res) => {
   res.send({ count: result });
 });
 // post
-app.post("/applications", async (req, res) => {
+app.post("/applications", verifyToken, verifySeeker, async (req, res) => {
   const application = req.body;
   const result = await applicationsCollection.insertOne(application);
   res.send(result);
