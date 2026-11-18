@@ -92,6 +92,10 @@ const verifyAdmin = async (req,res,next) =>{
 }
 
 // user related apis
+app.get ("/users",verifyToken,verifyAdmin, async(req,res)=>{
+  const result = await userCollection.find({}).toArray();
+  res.send(result);
+})
 app.get("/users/:id", async (req, res) =>{
   const {id} = req.params;
   const result = await userCollection.findOne({_id: new ObjectId(id)}, {projection:{premium:1}});
